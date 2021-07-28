@@ -9,42 +9,47 @@ from ursina import ursinastuff
 
 # login = Login()
 # login.mainloop()
-
-# print(login.login_success)
 # if login.login_success :
 app = Ursina()
 window.fps_counter.enabled = False
 
+# 1인칭 플레이어 생성
+player = FirstPersonController()
+
+# 땅 블록 선언
 grain = load_texture('assets/block/stone.png')
+
 # 블록 배열
 blocks = [
-    load_texture('assets/block/stone.png'),
-    load_texture('assets/block/brick.png'),
-    load_texture('assets/block/glass.png'),
-    load_texture('assets/block/quartz.png'),
-    load_texture('assets/block/gold.png'),
-    load_texture('assets/block/diamond.png'),
-    load_texture('assets/block/emerald.png'),
-    load_texture('assets/block/amethyst.png'),
-    load_texture('assets/block/honey.png'),
-    load_texture('assets/block/slime.png'),
-    load_texture('assets/block/redsand.png'),
-    load_texture('assets/block/redstone.png'),
-    load_texture('assets/concrete/white.png'),
-    load_texture('assets/concrete/red.png'),
-    load_texture('assets/concrete/purple.png'),
-    load_texture('assets/concrete/pink.png'),
-    load_texture('assets/concrete/orange.png'),
-    load_texture('assets/concrete/lime.png'),
-    load_texture('assets/concrete/lightblue.png'),
-    load_texture('assets/concrete/green.png'),
-    load_texture('assets/concrete/gray.png'),
-    load_texture('assets/concrete/cyan.png'),
-    load_texture('assets/concrete/blue.png'),
-    load_texture('assets/concrete/black.png'),
-    load_texture('assets/concrete/brown.png'),
-    load_texture('assets/concrete/magenta.png'),
-    load_texture('assets/concrete/white.png')
+    load_texture('assets/block/stone.png'), # 0
+    load_texture('assets/block/brick.png'), # 1
+    load_texture('assets/block/glass.png'), # 2
+    load_texture('assets/block/quartz.png'), # 3
+    load_texture('assets/block/gold.png'), # 4
+    load_texture('assets/block/diamond.png'), # 5
+    load_texture('assets/block/emerald.png'), # 6
+    load_texture('assets/block/amethyst.png'), # 7
+    load_texture('assets/block/honey.png'), # 8
+    load_texture('assets/block/slime.png'), # 9
+    load_texture('assets/block/redsand.png'), # 10
+    load_texture('assets/block/redstone.png'), # 11
+    load_texture('assets/block/bluestone.png'), # 12
+    load_texture('assets/concrete/white.png'), # 13
+    load_texture('assets/concrete/red.png'), # 14
+    load_texture('assets/concrete/purple.png'), # 15
+    load_texture('assets/concrete/pink.png'), # 16
+    load_texture('assets/concrete/orange.png'), # 17
+    load_texture('assets/concrete/lime.png'), # 18
+    load_texture('assets/concrete/lightblue.png'), # 19
+    load_texture('assets/concrete/green.png'), # 20
+    load_texture('assets/concrete/gray.png'), # 21
+    load_texture('assets/concrete/cyan.png'), # 22
+    load_texture('assets/concrete/blue.png'), # 23
+    load_texture('assets/concrete/black.png'), # 24
+    load_texture('assets/concrete/brown.png'), # 25
+    load_texture('assets/concrete/magenta.png'), # 26
+    load_texture('assets/concrete/lightgray.png'), # 27
+    load_texture('assets/concrete/yellow.png') # 28
 ]
 
 # 블록 순서
@@ -73,6 +78,9 @@ heart = Button(icon='./assets/heart.png', scale = .05, color = color.clear, posi
 # 탭 패널 생성
 tab_panel = Button(color=color.black33, scale = .2, position = (-.4 * window.aspect_ratio, .0))
 
+# 죽었는 지 변수
+is_died = False
+
 # 인벤토리 창 생성
 inventory = Inventory()
 
@@ -82,7 +90,7 @@ for i in range(9):
 
 # 키보드 입력받기
 def input(key) :
-    global block_id, player, block_section
+    global block_id, player, block_section,blocks
     # 자유모드
     if key == 'f6' :
         player.gravity = 0
@@ -93,9 +101,9 @@ def input(key) :
     if key.isdigit() :
         if int(key) <= 9 :
             block_id = 9 * block_section + (int(key) - 1)
-    # 블록 바꾸기(f1~f5)
+    # 블록 바꾸기(f1~f3)
     elif len(key) == 2 and key[0] == 'f':
-        if int(key[1]) <= 9 :
+        if int(key[1]) <= 3 :
             block_section = int(key[1:]) - 1
             block_id = 9 * block_section
             # 인벤토리 삭제 후
@@ -109,11 +117,20 @@ def input(key) :
 
 # 자동 호출되는 함수 
 def update() :
-    global player, left_ctrl_held
+    global player, is_died
     # Y : -100 이하로 내려가면 player 죽음
     if player.position.y < - 100 :
-        health.value = 0
         player.position = (0,0,0)
+        health.value = 0
+        
+
+    # CTRL 눌러진 상태라면, 플레이어 속도 제어
+    if held_keys['control'] :
+        player.speed = 2.5
+    elif held_keys['shift'] :
+        player.speed = 10
+    else :
+        player.speed = 5
 
     # 낙사 데미지
     if player.fall_time >= 0.2:
@@ -128,7 +145,13 @@ def update() :
     # 체력이 0 이면 죽음.
     if health.value == 0 :
         # 죽었을 때 패널 생성
-        die_panel.visible = True
+        die_panel = Button(scale = (3,1), color = color.dark_gray, position = (0,0,-4), disabled = True)
+        player.cursor.visible = False
+        die_panel.text = 'You Died!!'
+        if not is_died :
+            is_died = True
+        else :
+            destroy(die_panel)
     
     # 탭 누르는 동안 tab_panel 보여주기
     if held_keys['tab'] : 
@@ -159,23 +182,12 @@ class Voxel(Button) :
             if key == 'left mouse down' : # 왼쪽마우스 클릭 
                 Voxel(position=self.position + mouse.normal,texture = blocks[block_id]) # 박스 생성
             elif key == 'right mouse down' : # 오른쪽마우스 클릭
-                destroy(self) # 박스 파괴
-
-# terrainWidth = 10
-# for i in range(terrainWidth * terrainWidth) :
-#     bud = Entity(model='cube',color=color.green,texture=grain)
-#     bud.x = i/terrainWidth
-#     bud.z = i%terrainWidth
-#     bud.y = 0
+                destroy(self) # 박스 파괴 
 
 
 # 초기 지형 생성
 for z in range(-5,5) :
     for x in range(-5,5) :
-        voxel = Voxel(position=(x,0,z))
-
-
-# 1인칭 플레이어 생성
-player = FirstPersonController()
+        voxel = Voxel(position=(x,0,z),texture=blocks[block_id])
 
 app.run()
