@@ -46,7 +46,7 @@ class Inventory(Button):
             origin = (-.5,.5),                                          
             color = color.black50,
             text = str(self.index),                            
-            z = -.3                                                     
+            z = -.1                                                     
             )
 
     # f1 ~ f3 눌렀을 때, 각 박스 삭제하고 다시 생성하기 위한 delete 

@@ -218,12 +218,11 @@ if __name__ == '__main__':
     from ursina import *
     app = Ursina()
 
-    a = Button(text='Restart', color=color.azure, icon = 'sword', scale=.25,text_color = color.black)
+    #a = Button(text='Restart', color=color.azure, icon = 'sword', position = (-.2,-.2,0),scale=.25,text_color = color.black)
     #a.fit_to_text()
-    a.on_click = print('다시하기') # assign a function to the button.
+    #a.on_click = print('다시하기') # assign a function to the button.
     
-    # b = Button(text='Quit', color=color.black, scale=.25)
-    # b.fit_to_text()
-    # b.on_click = application.quit # assign a function to the button.
-    
+    b = Button(text='hello world!', color=color.azure, icon='sword', scale=.25, text_origin=(-.5,0))
+    b.on_click = application.quit # assign a function to the button
+    b.tooltip = Tooltip('exit')
     app.run()
