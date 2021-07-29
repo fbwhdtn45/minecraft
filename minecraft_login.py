@@ -5,6 +5,7 @@ from tkinter.constants import ANCHOR, CENTER
 from PIL import ImageTk, Image
 from minecraft_register import Register
 from minecraft_forget import Forget
+from queryProcess import queryProcess
 
 class Login(tk.Tk):
     def __init__(self):
@@ -89,11 +90,16 @@ class Login(tk.Tk):
                 id = self.id_textfield.get()
                 pw = self.pw_textfield.get()
                 #######  DB  ############
-                if id == 'admin' and pw == '1234' :
-                    tk.messagebox.showinfo('로그인','류종수님 환영합니다!')
-                    self.login_success = True
+                qp = queryProcess()
+                result = qp.select_from_userid(id)[0]
+                db_pw = result[4]
+                if pw == db_pw :
+                    tk.messagebox.showinfo('로그인 성공',result[1] + "님 환영합니다!!")
                     self.destroy()
-                    return 
+                    return
+                else :
+                    tk.messagebox.showerror('로그인 실패','아이디/비밀번호가 다릅니다.')
+                    return
                 ########  DB  ###########
         tk.messagebox.showerror('오류','아이디/비밀번호 입력 오류')
         return
@@ -107,7 +113,6 @@ class Login(tk.Tk):
     # 엔터키 입력 시 로그인 진행
     def enter(self,event) :
         self.login()
-
 
 if __name__ == "__main__" :
     login = Login()

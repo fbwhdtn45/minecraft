@@ -5,6 +5,7 @@ from tkinter import messagebox
 from tkinter.constants import ANCHOR, CENTER
 from PIL import ImageTk, Image
 import time
+from queryProcess import queryProcess
 
 class Forget(tk.Toplevel) :
     def __init__(self):
@@ -168,19 +169,24 @@ class Forget(tk.Toplevel) :
         if self.id_search_validation() :
             name = self.id_name_textfield.get()
             phone = self.id_phone1_textfield.get() + self.id_phone2_textfield.get() + self.id_phone3_textfield.get() 
-            ####  DB  ######
-            print('<아이디 찾기 정보>')
-            print('name : ' + name)
-            print('phone : ' + phone)
-            ###############
+            ####  DB  ###### 수정하기 ~~~
+            qp = queryProcess()
+            try :
+                result = qp.select_id(name,phone)
+                id = result[0]
+                tk.messagebox.showinfo('아이디 찾기',name + "님의 ID는 " + id + "입니다.")
+            except :
+                tk.messagebox.showinfo('실패',"정보를 못 찾았습니다.")
             return
-
+        else :
+            return
+            ###############
     def pw_search(self) :
         if self.pw_search_validation() :
             id = self.pw_id_textfield.get()
             name = self.pw_name_textfield.get()
             phone = self.pw_phone1_textfield.get() + self.pw_phone2_textfield.get() + self.pw_phone3_textfield.get() 
-            #####  DB  ######
+            #####  DB  ###### 수정하기 ~~~~
             print('<비밀번호 찾기 정보>')
             print('id : ' + id)
             print('name : ' + name)

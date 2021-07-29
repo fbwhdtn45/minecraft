@@ -10,7 +10,6 @@ from ursina.prefabs.cursor import Cursor
 
 if __name__ == "__main__" :
     # login = Login()
-    # login.mainloop()
     # if login.login_success :
     app = Ursina()
     window.fps_counter.enabled = False

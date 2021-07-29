@@ -21,7 +21,7 @@ grain = load_texture('assets/block/stone.png')
 # Terrain 엔티티 설정
 terrain = Entity(model=None,collider=None)
 # Terrain 생성할 가로/세로 칸
-terrainWidth = 50
+terrainWidth = 10
 
 subWidth = terrainWidth
 subsets = []
@@ -31,7 +31,7 @@ currentSubset = 0
 
 # 펄린 노이즈 매개변수 설정
 noise = PerlinNoise(octaves=2,seed=2021)
-amp = 32
+amp = 64
 freq = 100
 
 # 로딩 창
@@ -44,7 +44,7 @@ loading_bar.text_entity.color = color.clear
 finishedTerrain = False
 
 shellies = []
-shellWidth = 10
+shellWidth = 6
 
 
 def update():
@@ -132,7 +132,7 @@ player = FirstPersonController()
 player.cursor.visible = False
 player.gravity = 1
 player.x = player.z = 2
-player.y = 20
+player.y = 5
 prevZ = player.z
 prevX = player.x
 

@@ -5,6 +5,8 @@ from tkinter import messagebox
 from tkinter.constants import ANCHOR, CENTER
 from PIL import ImageTk, Image
 import time
+from queryProcess import queryProcess
+
 class Register(tk.Toplevel) :
     def __init__(self):
         super().__init__()
@@ -193,15 +195,14 @@ class Register(tk.Toplevel) :
         address = self.address_textfield.get()
         email = self.email_textfield.get() + "@" + self.combobox.get()
         #########  DB  ###############
-        print("id :" + id)
-        print("pw :" + pw)
-        print("name :" + name)
-        print("phone :" + phone)
-        print("address :" + address)
-        print("email :" + email)
+        qp = queryProcess()
+        if qp.insert(id, name, phone, address, pw, email, 0) :
+            self.destroy()
+            tk.messagebox.showinfo('성공!','정상적으로 회원가입이 되었습니다.')
+        else :
+            self.destroy()
+            tk.messagebox.showinfo('실패','관리자에게 문의바랍니다.')
         ##########  DB  ##############
-        self.destroy()
-        tk.messagebox.showinfo('성공!','정상적으로 회원가입이 되었습니다.')
         
 
 
