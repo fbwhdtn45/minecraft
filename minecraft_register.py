@@ -38,6 +38,10 @@ class Register(tk.Toplevel) :
         # ID TEXT
         self.id_textfield = tk.Entry(self, bg = 'linen')
         self.id_textfield.grid(row = 1, column = 2,columnspan=5)
+        # ID 유효성 검증 함수 바인딩
+        self.id_textfield.bind("<FocusOut>",self.id_check)
+        # 유효성 검증 여부 변수
+        self.id_ischecked = False
 
         # PW
         self.pw_label = tk.Label(self,text="PW", bg='snow2')
@@ -138,6 +142,9 @@ class Register(tk.Toplevel) :
         # id필드에 포커스
         self.id_textfield.focus_set()
         
+        # DB 커넥션 실행
+        self.qp = queryProcess()
+        
         # 0.1초마다 update 함수
         self.update()
 
@@ -151,10 +158,36 @@ class Register(tk.Toplevel) :
     # 엔터키 입력 시 가입 신청 진행
     def enter(self, event) :
         self.register()
+    
+    # id 필드 포커싱 아웃 시, 아이디 유효성 검증
+    def id_check(self, event) :
+        id = self.id_textfield.get()
+        # 이미 아이디가 존재하면,
+        if self.id_textfield.get() :
+            if self.qp.select_from_userid(id) :
+                self.id_ischecked = False
+                self.id_textfield.configure(bg='orange red')
+            else :
+                self.id_textfield.configure(bg='limegreen')
+                self.id_ischecked = True
+        else :
+            self.id_textfield.configure(bg='linen')
+    
+    def phone_check(self) :
+        try : 
+            int(self.phone1_textfield.get())
+            int(self.phone2_textfield.get())
+            int(self.phone3_textfield.get())
+            return True
+        except :
+            return False
 
     # pw 및 필수 칸 유효성 검증
     def validation(self) :
         # ID 필드
+        if not self.id_ischecked :
+            tk.messagebox.showerror('오류','아이디 확인하세요.')
+            return False 
         if not self.id_textfield.get() :
             tk.messagebox.showerror('오류','아이디 입력하세요.')
             return False     
@@ -173,6 +206,9 @@ class Register(tk.Toplevel) :
         # 연락처
         if not self.phone1_textfield.get() or not self.phone3_textfield.get() or not self.phone3_textfield.get() :
             tk.messagebox.showerror('오류','연락처를 입력하세요.')
+            return False
+        if not self.phone_check() :
+            tk.messagebox.showerror('오류','연락처는 숫자로 입력하세요.')
             return False
         # 주소
         if not self.address_textfield.get() :
@@ -195,13 +231,12 @@ class Register(tk.Toplevel) :
         address = self.address_textfield.get()
         email = self.email_textfield.get() + "@" + self.combobox.get()
         #########  DB  ###############
-        qp = queryProcess()
-        if qp.insert(id, name, phone, address, pw, email, 0) :
+        if self.qp.insert(id, name, phone, address, pw, email, 0) :
             self.destroy()
             tk.messagebox.showinfo('성공!','정상적으로 회원가입이 되었습니다.')
         else :
             self.destroy()
-            tk.messagebox.showinfo('실패','관리자에게 문의바랍니다.')
+            tk.messagebox.showerror('실패','관리자에게 문의바랍니다.')
         ##########  DB  ##############
         
 

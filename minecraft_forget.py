@@ -133,67 +133,109 @@ class Forget(tk.Toplevel) :
         self.grid_columnconfigure(6, weight=10)
         self.grid_columnconfigure(7, weight=20)
 
+        # 아이디 찾기 id 필드에 포커스 적용
+        self.id_name_textfield.focus_set()
+
+        # DB 커넥션
+        self.qp = queryProcess()
+
         self.mainloop()
 
+    # 휴대폰번호에 문자열이 있는 지 여부 판단
+    def id_phone_check(self) :
+        if  self.id_phone1_textfield.get().isdigit() and self.id_phone2_textfield.get().isdigit() and self.id_phone3_textfield.get().isdigit() :
+            return True
+        else :
+            tk.messagebox.showerror('오류','연락처는 숫자로 입력하세요.')
+            return False
+
+    # 휴대폰번호에 문자열이 있는 지 여부 판단
+    def pw_phone_check(self) :
+        if  self.pw_phone1_textfield.get().isdigit() and self.pw_phone2_textfield.get().isdigit() and self.pw_phone3_textfield.get().isdigit() :
+            return True
+        else :
+            tk.messagebox.showerror('오류','연락처는 숫자로 입력하세요.')
+            return False
+
+    # 아이디 찾기 위한 유효성 검증
     def id_search_validation(self) :
+        # 모든 칸이 입력 되있는 지
         if self.id_name_textfield.get() :
             if self.id_phone1_textfield.get() :
                 if self.id_phone2_textfield.get() :
                     if self.id_phone3_textfield.get() :
-                        return True
-        else :
-            tk.messagebox.showerror('오류','아이디 찾기 정보 오류')
-            return False
+                        # 휴대폰 번호 문자열 여부 판단
+                        if self.id_phone_check() :
+                            return True
+                        else : 
+                            return False
+        # 입력 칸이 비어있으면,
+        tk.messagebox.showerror('오류','정보를 정확히 입력 해주세요.')
+        return False
 
+    # 비밀번호 찾기 위한 유효성 검증
     def pw_search_validation(self) :
+        # 모든 칸이 입력 되있는 지
         if self.pw_id_textfield.get() :
             if self.pw_name_textfield.get() :
-                if self.pw_id_textfield.get() :
-                    if self.pw_phone1_textfield.get() :
-                        if self.pw_phone2_textfield.get() :
-                            if self.pw_phone3_textfield.get() :
+                print(1)
+                if self.pw_phone1_textfield.get() :
+                    if self.pw_phone2_textfield.get() :
+                        if self.pw_phone3_textfield.get() :
+                            # 휴대폰 번호 문자열 여부 판단
+                            if self.pw_phone_check() :
                                 return True
-        else :
-            tk.messagebox.showerror('오류','비밀번호 찾기 정보 오류')
-            return False
+                            else : 
+                                return False
+        
+        tk.messagebox.showerror('오류','비밀번호 찾기 정보 오류')
+        return False
+
+    # 아이디 찾기 엔터키 callback 함수        
     def id_enter(self,event) :
         if self.id_search_validation() :
             self.id_search() 
 
+    # 비밀번호 찾기 엔터키 callback 함수
     def pw_enter(self,event) :
         if self.pw_search_validation() :
             self.pw_search()
             return  
 
+    # 아이디 찾기 메인 함수
     def id_search(self) :
         if self.id_search_validation() :
             name = self.id_name_textfield.get()
             phone = self.id_phone1_textfield.get() + self.id_phone2_textfield.get() + self.id_phone3_textfield.get() 
-            ####  DB  ###### 수정하기 ~~~
-            qp = queryProcess()
+            ####  DB  ######
             try :
-                result = qp.select_id(name,phone)
+                result = self.qp.select_id(name,phone)
                 id = result[0]
                 tk.messagebox.showinfo('아이디 찾기',name + "님의 ID는 " + id + "입니다.")
             except :
-                tk.messagebox.showinfo('실패',"정보를 못 찾았습니다.")
+                tk.messagebox.showinfo('실패',"아이디를 못 찾았습니다.")
             return
         else :
             return
             ###############
+    
+    # 비밀번호 찾기 메인 함수
     def pw_search(self) :
         if self.pw_search_validation() :
             id = self.pw_id_textfield.get()
             name = self.pw_name_textfield.get()
             phone = self.pw_phone1_textfield.get() + self.pw_phone2_textfield.get() + self.pw_phone3_textfield.get() 
             #####  DB  ###### 수정하기 ~~~~
-            print('<비밀번호 찾기 정보>')
-            print('id : ' + id)
-            print('name : ' + name)
-            print('phone : ' + phone)
+            try :
+                result = self.qp.select_pw(id,name,phone)
+                pw = result[0]
+                tk.messagebox.showinfo('비밀번호 찾기',id + "의 PW는 " + pw + "입니다.")
+            except :
+                tk.messagebox.showinfo('실패',"비밀번호를 못 찾았습니다.")
+                return
             #################
-            return
 
+    # 종료 키 누르면 나가기
     def quit(self) :
         self.destroy()
         return
