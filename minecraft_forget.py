@@ -133,9 +133,6 @@ class Forget(tk.Toplevel) :
         self.grid_columnconfigure(6, weight=10)
         self.grid_columnconfigure(7, weight=20)
 
-        # 아이디 찾기 id 필드에 포커스 적용
-        self.id_name_textfield.focus_set()
-
         # DB 커넥션
         self.qp = queryProcess()
 
@@ -178,7 +175,6 @@ class Forget(tk.Toplevel) :
         # 모든 칸이 입력 되있는 지
         if self.pw_id_textfield.get() :
             if self.pw_name_textfield.get() :
-                print(1)
                 if self.pw_phone1_textfield.get() :
                     if self.pw_phone2_textfield.get() :
                         if self.pw_phone3_textfield.get() :
@@ -187,14 +183,14 @@ class Forget(tk.Toplevel) :
                                 return True
                             else : 
                                 return False
-        
+        # 입력 칸이 하나라도 비어있으면,
         tk.messagebox.showerror('오류','비밀번호 찾기 정보 오류')
         return False
 
     # 아이디 찾기 엔터키 callback 함수        
     def id_enter(self,event) :
         if self.id_search_validation() :
-            self.id_search() 
+            self.id_search()
 
     # 비밀번호 찾기 엔터키 callback 함수
     def pw_enter(self,event) :
@@ -214,9 +210,9 @@ class Forget(tk.Toplevel) :
                 tk.messagebox.showinfo('아이디 찾기',name + "님의 ID는 " + id + "입니다.")
             except :
                 tk.messagebox.showinfo('실패',"아이디를 못 찾았습니다.")
-            return
-        else :
-            return
+
+        self.focus_set()
+        return
             ###############
     
     # 비밀번호 찾기 메인 함수
@@ -232,7 +228,9 @@ class Forget(tk.Toplevel) :
                 tk.messagebox.showinfo('비밀번호 찾기',id + "의 PW는 " + pw + "입니다.")
             except :
                 tk.messagebox.showinfo('실패',"비밀번호를 못 찾았습니다.")
-                return
+        
+        self.focus_set()
+        return
             #################
 
     # 종료 키 누르면 나가기

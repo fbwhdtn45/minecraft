@@ -81,6 +81,9 @@ class Login(tk.Tk):
         # id필드에 포커스
         self.id_textfield.focus_set()
         
+        # DB 커넥션
+        self.qp = queryProcess()
+        
         tk.mainloop()
 
     # 로그인 함수
@@ -92,39 +95,41 @@ class Login(tk.Tk):
                 id = self.id_textfield.get()
                 pw = self.pw_textfield.get()
                 #######  DB  ############
-                qp = queryProcess()
                 # db에 저장된 pw 가져오기
-                result = qp.select_from_userid(id)
-                db_pw = result[4]
-                # pw 같으면
-                if pw == db_pw :
-                    # pw_error = 0 초기화
-                    qp.update_pw_error_cnt(id,'success')
-                    tk.messagebox.showinfo('로그인 성공',result[1] + "님 환영합니다!!")
-                    self.destroy()
-                    return
-                # pw 틀림
-                else :
-                    # pw_error += 1
-                    qp.update_pw_error_cnt(id,'fail')
-                    # 연속 5회 실패 -> 계정 자금
-                    if result[6] == 4 :
-                        tk.messagebox.showerror('잠금','로그인 연속 5회 실패하여 계정이 잠겼습니다.' + "\n" + '관리자에게 문의해 주세요.')
+                if self.qp.select_from_userid(id) :
+                    result = self.qp.select_from_userid(id)
+                    db_pw = result[4]
+                    # pw 같으면
+                    if pw == db_pw :
+                        self.qp.update_pw_error_cnt(id,'success')
+                        tk.messagebox.showinfo('로그인 성공',result[1] + "님 환영합니다!!")
+                        self.destroy()
+                        self.login_success = True
                         return
-                    # 이미 잠김 -> 잠겼다고 표시
-                    elif result[6] > 4 :
-                        tk.messagebox.showerror('잠금','잠긴 계정입니다.' + "\n" + '관리자에게 문의해 주세요.')
+                    # pw 틀림
+                    else :
+                        # pw_error += 1
+                        self.qp.update_pw_error_cnt(id,'fail')
+                        # 연속 5회 실패 -> 계정 자금
+                        if result[6] == 4 :
+                            tk.messagebox.showerror('잠금','로그인 연속 5회 실패하여 계정이 잠겼습니다.' + "\n" + '관리자에게 문의해 주세요.')
+                            return
+                        # 이미 잠김 -> 잠겼다고 표시
+                        elif result[6] > 4 :
+                            tk.messagebox.showerror('잠금','잠긴 계정입니다.' + "\n" + '관리자에게 문의해 주세요.')
+                            return
+
+                        tk.messagebox.showerror('로그인 실패','아이디/비밀번호가 다릅니다.' + "\n" + '로그인 틀린 횟수 : ' + str(result[6] + 1) + '번' + "\n" + "(5회 실패 시, 계정 잠금)")
                         return
 
-                    tk.messagebox.showerror('로그인 실패','아이디/비밀번호가 다릅니다.' + "\n" + '로그인 틀린 횟수 : ' + str(result[6] + 1) + '번' + "\n" + "(5회 실패 시, 계정 잠금)")
-                    return
-                    
         tk.messagebox.showerror('오류','아이디/비밀번호 입력 오류')
         return
 
+    # 회원가입 창 생성
     def register(self) :
         register = Register()
 
+    # 아이디/비밀번호 찾기 창 생성
     def forget(self) :
         forget = Forget()
 

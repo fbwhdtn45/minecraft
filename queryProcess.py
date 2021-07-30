@@ -47,7 +47,7 @@ class queryProcess() :
             return True
         except :
             return False
-
+    # 아이디 찾기
     def select_id(self,name,phone) :
         sql = "SELECT userid FROM USERS WHERE username = '" + name + "' AND phone = '" + phone + "'"
         try :
@@ -56,7 +56,7 @@ class queryProcess() :
             return result
         except :
             return False
-    
+    # 비밀번호 찾기
     def select_pw(self,id,name,phone) :
         sql = "SELECT userpw FROM USERS WHERE userid = '" + id + "' AND username = '" + name + "' AND phone = '" + phone + "'"
         try :

@@ -1,25 +1,21 @@
 from ursina import *
 from ursina.prefabs.health_bar import HealthBar
 from ursina.prefabs.first_person_controller import FirstPersonController
-import math
 from minecraft_login import Login
 from ursina.application import *
-from ursina.prefabs.Inventory import Inventory
-from ursina import ursinastuff
+from ursina.prefabs.quick_slot import QuickSlot
 from ursina.prefabs.cursor import Cursor
+from ursina.prefabs.voxel import Voxel
+from ursina.prefabs.clock import Clock
+from ursina.prefabs.background import Background
+import math
+from ursina.prefabs.hand import Hand
 
-if __name__ == "__main__" :
-    # login = Login()
-    # if login.login_success :
+class Minecraft(Entity) :
     app = Ursina()
     window.fps_counter.enabled = False
-
-    # 1인칭 플레이어 생성
-    player = FirstPersonController()
-
     # 땅 블록 선언
     grain = load_texture('assets/block/stone.png')
-
     # 블록 배열
     blocks = [
         load_texture('assets/block/stone.png'), # 0
@@ -52,164 +48,151 @@ if __name__ == "__main__" :
         load_texture('assets/concrete/lightgray.png'), # 27
         load_texture('assets/concrete/yellow.png') # 28
     ]
-
     # 블록 순서
     block_section = 0
     block_id = 0
 
-    # 블록 클래스 선언
-    class Voxel(Button) :
-        def __init__(self, position=(0,0,0), texture = 'stone') :
-            super().__init__(
-                parent=scene,
-                position=position,
-                model='cube', # 기본 블록 모델 (정육면체 )
-                origin_y=0.5,
-                texture=texture,
-                color=color.color(0,0,random.uniform(0.9,1.0)), # 하얀색 블록, 명도 0.9~1.0 랜덤
-                scale=1.0 # 블록의 크기
-            )
-        # 왼쪽/오른쪽 마우스 클릭 매서드
-        def input(self, key) : # 
-            if self.hovered : #구형에 갖다댄 채
-                if key == 'left mouse down' : # 왼쪽마우스 클릭 
-                    Voxel(position=self.position + mouse.normal,texture = blocks[block_id]) # 박스 생성
-                elif key == 'right mouse down' : # 오른쪽마우스 클릭
-                    destroy(self) # 박스 파괴 
+    def __init__(self):
+        # 초기화
+        super().__init__()
+        # 1인칭 플레이어 생성
+        self.player = FirstPersonController()
+        # 배경 생성  
+        self.sky = Background(texture = load_texture('assets/background/sky.jpg'))
 
-    # 배경 생성  
-    sky = Sky(texture=load_texture('assets/background/sky.jpg'),scale = 500, model = 'sphere', double_sided = True)
+        # 손 생성
+        self.hand = Hand()
 
-    # 손 생성
-    hand = Entity(
-        parent = camera.ui,
-        model = 'cube',
-        texture = blocks[block_id],
-        scale = 0.3,
-        rotation = Vec3(-10, -10, 10),
-        position = Vec2(0.6, - 0.5)
-    )
+        # 체력 바 생성
+        self.health = HealthBar(position = (-.4, -.35))
 
-    # 체력 바 생성
-    health = HealthBar(position = (-.4, -.35))
+        # 체력 이미지 생성
+        self.heart = Button(icon='./assets/heart.png', scale = .05, color = color.clear, position = (-.4,-.365,-.1)) 
 
-    # 체력 이미지 생성
-    heart = Button(icon='./assets/heart.png', scale = .05, color = color.clear, position = (-.4,-.365,-.1)) 
+        # 탭 패널 생성
+        self.tab_panel = Button(color=color.black33, scale = .2, position = (-.4 * window.aspect_ratio, .0))
 
-    # 탭 패널 생성
-    tab_panel = Button(color=color.black33, scale = .2, position = (-.4 * window.aspect_ratio, .0))
+        # 죽었는 지 변수
+        self.is_died = False
 
-    # 죽었는 지 변수
-    is_died = False
+        # 퀵슬롯 창 생성
+        self.quickSlot = QuickSlot()
 
-    # 인벤토리 창 생성
-    inventory = Inventory()
+        # 초기 퀵슬롯 설정 --------------- 인벤토리랑 엮어서 수정하기
+        for i in range(9):                                                  
+            self.quickSlot.append(Minecraft.blocks[i])
 
-    # 초기 인벤토리 설정
-    for i in range(9):                                                  
-        inventory.append(blocks[i]) 
+        # 초기 지형 생성 ---------------- 수정하기
+        for z in range(-5,5) :
+            for x in range(-5,5) :
+                self.voxel = Voxel(position=(x,0,z))
 
+
+        # 오른쪽 위 시간패널 생성
+        self.clock = Clock()
+
+        # 실행
+        Minecraft.app.run()
+    
     # 키보드 입력받기
-    def input(key) :
-        global block_id, player, block_section,blocks, is_died
+    def input(self,key) :
         # 자유모드
         if key == 'f6' :
-            player.gravity = 0
+            self.player.gravity = 0
             return
 
         # 중력모드
         elif key == 'f7' :
-            player.gravity = 1
+            self.player.gravity = 1
             return
 
         # 블록 바꾸기(1~10)
         if key.isdigit() :
             if int(key) <= 9 :
-                block_id = 9 * block_section + (int(key) - 1)
-                # 손에 있는 블록 교체
-                hand.texture = blocks[block_id]
-                return
+                Minecraft.block_id = 9 * Minecraft.block_section + (int(key) - 1)
         # 블록 바꾸기(f1~f3)
         elif len(key) == 2 and key[0] == 'f':
             if int(key[1]) <= 3 :
-                block_section = int(key[1:]) - 1
-                block_id = 9 * block_section
+                Minecraft.block_section = int(key[1:]) - 1
+                Minecraft.block_id = 9 * Minecraft.block_section
                 # 인벤토리 삭제 후
-                inventory.delete()
+                self.quickSlot.delete()
                 # 다시 인벤토리 채워넣기
-                for i in range(block_id,block_id+9):                                                  
-                    inventory.append(blocks[i])
-                # 손에 있는 블록 교체
-                hand.texture = blocks[block_id]
-                return
+                for i in range(Minecraft.block_id,Minecraft.block_id+9):                                                  
+                    self.quickSlot.append(Minecraft.blocks[i])
+
+        # 손에 있는 블록 교체
+        self.voxel.change_block(Minecraft.blocks[Minecraft.block_id])
+        self.hand.change_block(Minecraft.blocks[Minecraft.block_id])
+        return
 
     # 자동 호출되는 함수 
-    def update() :
-        global player, is_died, application
+    def update(self) :
         # Y : -50 이하로 내려가면 player 죽음
-        if not player :
+        if not self.player :
             return
 
-        if player.position.y < - 50 :
-            player.position = (0,0,0)
-            health.value = 0
+        if self.player.position.y < - 50 :
+            self.player.position = (0,0,0)
+            self.health.value = 0
             return
 
         # 낙사 데미지
-        if player.fall_time >= 0.2:
-            if player.fall_time >= 0.25 :
-                health.value -= 20
-            elif player.fall_time >= 0.3 :
-                health.value -= 30
+        if self.player.fall_time >= 0.2:
+            if self.player.fall_time >= 0.25 :
+                self.health.value -= 20
+            elif self.player.fall_time >= 0.3 :
+                self.health.value -= 30
             else :
-                health.value -= 10 
-            player.fall_time = 0
+                self.health.value -= 10 
+            self.player.fall_time = 0
             return
 
         # 체력이 0 이면 죽음.
-        if health.value == 0 :
+        if self.health.value == 0 :
             # 죽지 않은 상태이면,
-            if not is_died :
+            if not self.is_died :
                 # 죽은 상태로 전환
-                is_died = True
+                self.is_died = True
                 # 1인칭 사용해제
-                player.on_disable()
-                destroy(player.cursor)
+                self.player.on_disable()
+                destroy(self.player.cursor)
                 # 죽었을 때 패널 생성
                 die_panel = Button(scale = (3,1), color = color.black66, position = (0,0,-.99), text = 'You Died!!',disabled = True)
                 # restart 버튼
-                restart_btn = Button(parent = die_panel,scale = (.1,.05),color = color.black,text_color = color.white,text = 'Restart : [ R ]',position = (-.1,-.15,-.1), _on_click = restart)
+                restart_btn = Button(parent = die_panel,scale = (.1,.05),color = color.black,text_color = color.white,text = 'Restart : [ R ]',position = (-.1,-.15,-.1), _on_click = self.restart)
                 # quit 버튼
-                quit_btn = Button(parent = die_panel,scale = (.1,.05),color = color.black,text_color = color.white,text = 'Quit : [ Q ]',position = (.1,-.15,-.1), _on_click = application.quit)
+                quit_btn = Button(parent = die_panel,scale = (.1,.05),color = color.black,text_color = color.white,text = 'Quit : [ Q ]',position = (.1,-.15,-.1), _on_click = self.restart)
             else :
                 return
-        
+
         # CTRL 눌러진 상태라면, 플레이어 속도 제어
         if held_keys['control'] :
-            player.speed = 2.5
+            self.player.speed = 2.5
         elif held_keys['shift'] :
-            player.speed = 10
+            self.player.speed = 10
         else :
-            player.speed = 5
+            self.player.speed = 5
 
         # 탭 누르는 동안 tab_panel 보여주기
         if held_keys['tab'] : 
             # 탭 패널 생성
-            tab_panel.text = "My Position" + "\n"
-            tab_panel.text += "X : " + str(round(player.position.x,1)) + "\n"
-            tab_panel.text += "Y : " + str(round(player.position.y,1)) + "\n"
-            tab_panel.text += "Z : " + str(round(player.position.z,1))
-            tab_panel.visible = True
+            self.tab_panel.text = "My Position" + "\n"
+            self.tab_panel.text += "X : " + str(round(self.player.position.x,1)) + "\n"
+            self.tab_panel.text += "Y : " + str(round(self.player.position.y,1)) + "\n"
+            self.tab_panel.text += "Z : " + str(round(self.player.position.z,1))
+            self.tab_panel.visible = True
         else : 
-            tab_panel.visible = False
+            self.tab_panel.visible = False
 
-    # 초기 지형 생성
-    for z in range(-5,5) :
-        for x in range(-5,5) :
-            voxel = Voxel(position=(x,0,z),texture=grain)
-    
-    def restart() :
+    def restart(self) :
         print('다시하기')
+        return
 
-    # 실행
-    app.run()
+
+if __name__ == "__main__" :
+    # login = Login()
+    # if login.success :
+    #     minecraft = Minecraft()
+
+    minecraft = Minecraft()
