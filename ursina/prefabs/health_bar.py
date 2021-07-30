@@ -69,7 +69,7 @@ class HealthBar(Button):
             # 체력 바 관리 
             # 3분의 2 넘으면 초록색
             if self.value >= self.max_value / 3 * 2:
-                self.bar_color = color.green
+                self.bar_color = color.color(75,193.96,1)
             # 3분의 1 넘으면 주황색
             elif self.value >= self.max_value / 3 * 1 :
                 self.bar_color = color.gold

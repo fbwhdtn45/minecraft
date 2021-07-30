@@ -12,7 +12,7 @@ class Sky(Entity):
             scale = 9900,
             shader = unlit_shader,
             )
-
+        
         for key, value in kwargs.items():
             setattr(self, key, value)
 

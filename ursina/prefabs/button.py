@@ -222,7 +222,7 @@ if __name__ == '__main__':
     #a.fit_to_text()
     #a.on_click = print('다시하기') # assign a function to the button.
     
-    b = Button(text='hello world!', color=color.azure, icon='sword', scale=.25, text_origin=(-.5,0))
+    b = Button(text='hello world!', color=color.azure, icon='sword', scale=(.25,.25), text_origin=(-.5,0))
     b.on_click = application.quit # assign a function to the button
     b.tooltip = Tooltip('exit')
     app.run()
