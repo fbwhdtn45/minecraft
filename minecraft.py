@@ -1,9 +1,12 @@
 from ursina import *
+from ursina.application import *
 from ursina.prefabs.health_bar import HealthBar
 from ursina.prefabs.first_person_controller import FirstPersonController
 from minecraft_login import Login
 from ursina.application import *
-from ursina.prefabs.quick_slot import QuickSlot
+from ursina.prefabs.quickslot import Quickslot
+from ursina.prefabs.inventory import Inventory
+from ursina.prefabs.tempinventory import Tempinventory
 from ursina.prefabs.cursor import Cursor
 from ursina.prefabs.voxel import Voxel
 from ursina.prefabs.clock import Clock
@@ -13,9 +16,9 @@ from ursina.prefabs.hand import Hand
 
 class Minecraft(Entity) :
     app = Ursina()
+
     window.fps_counter.enabled = False
-    # 땅 블록 선언
-    grain = load_texture('assets/block/stone.png')
+
     # 블록 배열
     blocks = [
         load_texture('assets/block/stone.png'), # 0
@@ -48,94 +51,123 @@ class Minecraft(Entity) :
         load_texture('assets/concrete/lightgray.png'), # 27
         load_texture('assets/concrete/yellow.png') # 28
     ]
-    # 블록 순서
-    block_section = 0
-    block_id = 0
 
     def __init__(self):
-        # 초기화
         super().__init__()
-        # 1인칭 플레이어 생성
+
+        # 1인칭 플레이어
         self.player = FirstPersonController()
-        # 배경 생성  
+
+        # 배경
         self.sky = Background(texture = load_texture('assets/background/sky.jpg'))
 
-        # 손 생성
+        # 손
         self.hand = Hand()
 
-        # 체력 바 생성
+        # 체력 바
         self.health = HealthBar(position = (-.4, -.35))
 
-        # 체력 이미지 생성
+        # 체력 이미지(하트모양)
         self.heart = Button(icon='./assets/heart.png', scale = .05, color = color.clear, position = (-.4,-.365,-.1)) 
 
-        # 탭 패널 생성
+        # 탭 패널
         self.tab_panel = Button(color=color.black33, scale = .2, position = (-.4 * window.aspect_ratio, .0))
 
-        # 죽었는 지 변수
-        self.is_died = False
+        # 퀵 슬롯
+        self.quickslot = Quickslot()
+        
+        # 인벤토리
+        self.inventory = None
+        self.is_first = True
 
-        # 퀵슬롯 창 생성
-        self.quickSlot = QuickSlot()
+        # 임시 인벤토리
+        self.temp = Tempinventory()
 
-        # 초기 퀵슬롯 설정 --------------- 인벤토리랑 엮어서 수정하기
-        for i in range(9):                                                  
-            self.quickSlot.append(Minecraft.blocks[i])
-
+        # 현재 시간
+        self.clock = Clock()
+        
         # 초기 지형 생성 ---------------- 수정하기
         for z in range(-5,5) :
             for x in range(-5,5) :
                 self.voxel = Voxel(position=(x,0,z))
-
-
-        # 오른쪽 위 시간패널 생성
-        self.clock = Clock()
 
         # 실행
         Minecraft.app.run()
     
     # 키보드 입력받기
     def input(self,key) :
-        # 자유모드
-        if key == 'f6' :
-            self.player.gravity = 0
+        # F1 : 자유모드 / 중력모드 스위칭
+        if key == 'f1' :
+            if self.player.gravity == 0 :
+                self.player.gravity = 1
+            else :
+                self.player.gravity = 0
+            return
+        
+        # e 누르면 생성or삭제 // esc 누르면 삭제
+        if key == 'e' :
+            # 인벤토리 삭제
+            if self.inventory :
+                self.temp.delete()
+                for e in self.inventory.item_slot.children :
+                    self.temp.append(e.texture, e.x, e.y)
+                destroy(self.inventory)
+                # 1인칭 모드
+                self.player.on_enable()
+
+            # 인벤토리 생성
+            else :
+                self.inventory = Inventory()
+                # 커서 모드
+                self.player.on_disable()
+                # 인벤토리 첫 생성일 경우,
+                if self.is_first :
+                    for e in Minecraft.blocks :
+                        self.inventory.append(self.inventory.item_slot, e)
+                    self.is_first = False
+
+                # 인벤토리 퀵 슬롯 <-> 퀵 슬롯 연동
+                for e in self.quickslot.item_parent.children :
+                    self.inventory.append(self.inventory.quick_slot, e.texture, position = (e.x,0,-.1))
+                # 인벤토리 <-> 임시 인벤토리 연동
+                for e in self.temp.item_slot.children :
+                    self.inventory.append(self.inventory.item_slot, e.texture, position = (e.x,e.y,-.1))
             return
 
-        # 중력모드
-        elif key == 'f7' :
-            self.player.gravity = 1
-            return
-
-        # 블록 바꾸기(1~10)
+        # 블록 바꾸기(1~9)
         if key.isdigit() :
-            if int(key) <= 9 :
-                Minecraft.block_id = 9 * Minecraft.block_section + (int(key) - 1)
-        # 블록 바꾸기(f1~f3)
-        elif len(key) == 2 and key[0] == 'f':
-            if int(key[1]) <= 3 :
-                Minecraft.block_section = int(key[1:]) - 1
-                Minecraft.block_id = 9 * Minecraft.block_section
-                # 인벤토리 삭제 후
-                self.quickSlot.delete()
-                # 다시 인벤토리 채워넣기
-                for i in range(Minecraft.block_id,Minecraft.block_id+9):                                                  
-                    self.quickSlot.append(Minecraft.blocks[i])
-
-        # 손에 있는 블록 교체
-        self.voxel.change_block(Minecraft.blocks[Minecraft.block_id])
-        self.hand.change_block(Minecraft.blocks[Minecraft.block_id])
-        return
+            if int(key) > 0 :
+                # 손에 있는 블록 교체
+                try :
+                    self.voxel.change_block(self.quickslot.item_parent.children[int(key)-1].texture)
+                    self.hand.change_block(self.quickslot.item_parent.children[int(key)-1].texture)
+                # 텍스처가 없는 칸인 경우
+                except :
+                    self.voxel.change_block(None)
+                    self.hand.change_block(None)
+                    return
+            return
 
     # 자동 호출되는 함수 
     def update(self) :
         # Y : -50 이하로 내려가면 player 죽음
         if not self.player :
             return
-
         if self.player.position.y < - 50 :
             self.player.position = (0,0,0)
             self.health.value = 0
             return
+
+        # CTRL 눌러진 상태라면, 플레이어 속도 제어
+        if held_keys['control'] :
+            # 자유모드는 속도 하락 x
+            if self.player.gravity == 0 :
+                return
+            self.player.speed = 2.5
+        elif held_keys['shift'] :
+            self.player.speed = 10
+        else :
+            self.player.speed = 5
 
         # 낙사 데미지
         if self.player.fall_time >= 0.2:
@@ -151,28 +183,19 @@ class Minecraft(Entity) :
         # 체력이 0 이면 죽음.
         if self.health.value == 0 :
             # 죽지 않은 상태이면,
-            if not self.is_died :
+            if not self.player.is_died :
                 # 죽은 상태로 전환
-                self.is_died = True
+                self.player.is_died = True
                 # 1인칭 사용해제
                 self.player.on_disable()
-                destroy(self.player.cursor)
                 # 죽었을 때 패널 생성
                 die_panel = Button(scale = (3,1), color = color.black66, position = (0,0,-.99), text = 'You Died!!',disabled = True)
                 # restart 버튼
                 restart_btn = Button(parent = die_panel,scale = (.1,.05),color = color.black,text_color = color.white,text = 'Restart : [ R ]',position = (-.1,-.15,-.1), _on_click = self.restart)
                 # quit 버튼
-                quit_btn = Button(parent = die_panel,scale = (.1,.05),color = color.black,text_color = color.white,text = 'Quit : [ Q ]',position = (.1,-.15,-.1), _on_click = self.restart)
+                quit_btn = Button(parent = die_panel,scale = (.1,.05),color = color.black,text_color = color.white,text = 'Quit : [ Q ]',position = (.1,-.15,-.1), _on_click = self.quit)
             else :
                 return
-
-        # CTRL 눌러진 상태라면, 플레이어 속도 제어
-        if held_keys['control'] :
-            self.player.speed = 2.5
-        elif held_keys['shift'] :
-            self.player.speed = 10
-        else :
-            self.player.speed = 5
 
         # 탭 누르는 동안 tab_panel 보여주기
         if held_keys['tab'] : 
@@ -185,10 +208,19 @@ class Minecraft(Entity) :
         else : 
             self.tab_panel.visible = False
 
+        # 인벤토리가 있으면, 인벤토리 퀵 슬롯이랑 퀵 슬롯이랑 동기화시키기
+        if self.inventory : 
+            self.quickslot.delete()
+            for e in self.inventory.quick_slot.children :
+                self.quickslot.append(e)
+
     def restart(self) :
         print('다시하기')
         return
 
+    # 게임 종료
+    def quit(self) :
+        application.quit()
 
 if __name__ == "__main__" :
     # login = Login()
