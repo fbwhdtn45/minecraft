@@ -40,7 +40,13 @@ class Draggable(Button):
 
         if self.dragging and key == 'left mouse up':
             self.stop_dragging()
-
+        # 추가
+        if self.hovered and key == 'right mouse down' :
+            self.right_click()
+        
+    def right_click(self) :
+        if hasattr(self, 'rightClick'):
+            self.rightClick()
 
     def start_dragging(self):
         Draggable._z_plane.world_position = mouse.world_point

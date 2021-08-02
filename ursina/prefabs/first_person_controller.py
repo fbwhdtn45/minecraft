@@ -8,6 +8,9 @@ class FirstPersonController(Entity):
         self.speed = 5
         self.height = 2
         self.camera_pivot = Entity(parent=self, y=self.height)
+        
+        # 죽었는 지 여부
+        self.is_died = False
 
         camera.parent = self.camera_pivot
         camera.position = (0,0,0)
@@ -38,7 +41,7 @@ class FirstPersonController(Entity):
         self.direction = Vec3(
             self.forward * (held_keys['w'] - held_keys['s']) # 앞
             + self.right * (held_keys['d'] - held_keys['a']) # 옆
-            + self.up * (held_keys['space'] - held_keys['shift']) # 위
+            + self.up * (held_keys['space'] - held_keys['control']) # 위
             ).normalized()
 
         feet_ray = raycast(self.position+Vec3(0,0.5,0), self.direction, ignore=(self,), distance=.5, debug=False)
@@ -101,7 +104,6 @@ class FirstPersonController(Entity):
 
     def on_disable(self):
         mouse.locked = False
-        destroy(self.cursor)
         self.cursor.enabled = False
 
 
