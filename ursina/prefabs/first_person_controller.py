@@ -77,6 +77,14 @@ class FirstPersonController(Entity):
         if key == 'space':
             self.jump()
 
+         # F1 : 자유모드 / 중력모드 스위칭
+        if key == 'f1' :
+            if self.gravity == 0 :
+                self.gravity = 1
+            else :
+                self.gravity = 0
+            return
+            
     def jump(self):
         if not self.grounded:
             return
