@@ -9,7 +9,7 @@ class Voxel(Button) :
     # Init 값
     now_texture = 'brick'
     now_color = color.white
-    def __init__(self, position=(0,0,0), texture=now_texture, **kwargs) :
+    def __init__(self, position=(0,0,0), texture=now_texture, temp = None,**kwargs) :
         super().__init__(
             parent=scene,
             model='cube', # 기본 블록 모델 (정육면체)
@@ -21,6 +21,8 @@ class Voxel(Button) :
             scale=1.0 # 블록의 크기
         )
         self.player = None
+
+        self.temp = temp
 
         for key, value in kwargs.items() :
             if 'player' in kwargs.keys() :
@@ -45,9 +47,8 @@ class Voxel(Button) :
                     return
                 Voxel(position=self.position + mouse.normal,texture=Voxel.now_texture,player = self.player) # 박스 생성
             elif key == 'right mouse down' : # 오른쪽마우스 클릭
-                dropitem = Dropitem(self.player,self.texture,self.position)
+                dropitem = Dropitem(self.player,self.texture,self.position,self.temp)
                 destroy(self) # 박스 파괴
-
 
 
 if __name__ == '__main__':
@@ -55,8 +56,8 @@ if __name__ == '__main__':
     app = Ursina()
     player = FirstPersonController()
 
-    for z in range(-5,5) :
-        for x in range(-5,5) :
+    for z in range(-10,10) :
+        for x in range(-10,10) :
             voxel = Voxel(position=(x,0,z),player = player)
 
     voxel.change_block('sword')      

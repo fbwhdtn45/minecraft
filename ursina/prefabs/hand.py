@@ -42,6 +42,7 @@ class Hand(Entity):
             color = color.green,
             position = Vec3(0, 0, 0) 
         )   
+        self.box = Voxel()
 
     def change_block(self, texture) :
         # 텍스처 바꾸기
@@ -50,8 +51,11 @@ class Hand(Entity):
         if texture :
             # color.clear -> color.white 바꾸기
             self.voxel.color = color.white
+            self.box.change_block(self.voxel.texture)
         else :
             self.voxel.color = color.clear
+            self.box.change_block(None)
+
     
     def input(self,key) :
         # 왼쪽 / 오른쪽 마우스 클릭 시, 손 움직이게

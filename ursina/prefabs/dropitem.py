@@ -2,9 +2,10 @@ from ursina import *
 from ursina.prefabs.first_person_controller import FirstPersonController
 from ursina.prefabs.health_bar import HealthBar
 import datetime, time
+from ursina.prefabs.tempinventory import Tempinventory
 
 class Dropitem(Entity) :
-    def __init__(self, player, texture, position) :
+    def __init__(self, player, texture, position,temp) :
         super().__init__()
         
         self.dropped_item = Entity(parent = self,model = 'cube',scale = .3, texture=texture, position = position)
@@ -14,20 +15,25 @@ class Dropitem(Entity) :
         self.script = None
 
         self.dropped_time = datetime.datetime.now()
-
+        self.temp = temp
         self.gravity = 1
         self.grounded = False
         self.speed = 5
         self.height = 1
         self.air_time = .0
-        
-        self.player = player
+        self.player = player   
 
     def update(self) :
         # 드롭된 아이템이 존재하면,
         if self.dropped_item :
+
             # 돌고 있음
             self.dropped_item.rotation_y += 2
+
+            # -50 밑으로 떨어지면 파괴
+            if self.dropped_item.position.y <= - 50 :
+                destroy(self)
+                return
 
             now = datetime.datetime.now()
 
@@ -41,15 +47,16 @@ class Dropitem(Entity) :
             # 아이템이랑 플레이어 거리 계산
             r = distance(self.dropped_item.position, self.player.position)
 
-            # 거리가 1 미만이면 사라지게함
-            if r < 1 :
+            # 거리가 < 0.5이면 아이템 먹고
+            if r < 0.5 :
+                self.temp.drop_append(self.dropped_item.texture)
                 destroy(self)
+                return          
+            # 거리가 3 미만이면 아이템 끌어당기기
+            elif r < 3 :
+                self.dropped_item.add_script(SmoothFollow(target=self.player, offset=[0,0,0],speed = 2))
                 return
-            
-            # 거리가 3.5 미만이면 먹고
-            elif r < 3.5 :
-                self.dropped_item.add_script(SmoothFollow(target=self.player, offset=[0,0,0],speed = 3))
-                return
+
 
             # 드롭 아이템 중력 ray
             ray = boxcast(self.dropped_item.world_position + (self.dropped_item.up*.5), self.dropped_item.down, ignore=(self.dropped_item,),debug=False,thickness = (.3,.3))
