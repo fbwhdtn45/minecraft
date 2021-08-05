@@ -2,7 +2,7 @@ from ursina import *
 from ursina.application import *
 from ursina.prefabs.health_bar import HealthBar
 from ursina.prefabs.first_person_controller import FirstPersonController
-from minecraft_login import Login
+from login import Login
 from ursina.application import *
 from ursina.prefabs.quickslot import Quickslot
 from ursina.prefabs.inventory import Inventory
@@ -16,8 +16,10 @@ from ursina.prefabs.hand import Hand
 from ursina.prefabs.dropitem import Dropitem
 import pyautogui
 from ursina.prefabs.tabpanel import Tabpanel
+from ursina.prefabs.terrain import Terrain
 
 class Minecraft(Entity) :
+    acquire = False
     def __init__(self):
         super().__init__()
 
@@ -54,8 +56,7 @@ class Minecraft(Entity) :
         
         # 죽었을 때 패널
         self.die_panel = None
-
-        # 블록 배열
+            # 블록 배열
         self.blocks = [
             load_texture('assets/block/stone.png'), # 0
             load_texture('assets/block/brick.png'), # 1
@@ -87,11 +88,11 @@ class Minecraft(Entity) :
             load_texture('assets/concrete/lightgray.png'), # 27
             load_texture('assets/concrete/yellow.png') # 28
         ]
-        # 초기 지형 생성 ---------------- 수정하기
-        for z in range(-5,5) :
-            for x in range(-5,5) :
-                self.voxel = Voxel(position=(x,0,z),player = self.player)
-    
+
+        # 초기 지형 생성
+        self.terrain = Terrain()
+        self.terrain.generate(5,5,self.player,self.blocks,self.temp)
+
     # 키보드 입력받기
     def input(self,key) :
         # e 누르면 생성or삭제 // esc 누르면 삭제
@@ -110,11 +111,6 @@ class Minecraft(Entity) :
                 self.inventory = Inventory()
                 # 커서 모드
                 self.player.on_disable()
-                # 인벤토리 첫 생성일 경우,
-                if self.is_first :
-                    for e in self.blocks :
-                        self.inventory.append(self.inventory.item_slot, e)
-                    self.is_first = False
 
                 # 인벤토리 퀵 슬롯 <-> 퀵 슬롯 연동
                 for e in self.quickslot.item_parent.children :
@@ -128,15 +124,14 @@ class Minecraft(Entity) :
         if key.isdigit() :
             if int(key) > 0 :
                 # 손에 있는 블록 교체
-                try :
-                    self.voxel.change_block(self.quickslot.item_parent.children[int(key)-1].texture)
-                    self.hand.change_block(self.quickslot.item_parent.children[int(key)-1].texture)
+                for e in self.quickslot.item_parent.children :
+                    if e.x == int(key) - 1 :
+                        self.hand.change_block(e.texture)
+                        return
                 # 텍스처가 없는 칸인 경우
-                except :
-                    self.voxel.change_block(None)
-                    self.hand.change_block(None)
-                    return
-            return
+                self.hand.change_block(None)
+                return
+               
 
     # 자동 호출되는 함수 
     def update(self) :
@@ -181,9 +176,9 @@ class Minecraft(Entity) :
                 # 죽었을 때 패널 생성
                 self.die_panel = Button(parent = camera.ui,scale = (3,1), color = color.black66, position = (0,0,-.99), text = 'You Died!!',disabled = True)
                 # restart 버튼
-                restart_btn = Button(parent = self.die_panel,scale = (.1,.05),color = color.black,text_color = color.white,text = 'Restart : [ R ]',position = (-.1,-.15,-.1), _on_click = self.restart)
+                restart_btn = Button(parent = self.die_panel,scale = (.1,.05),color = color.black,text_color = color.white,text = 'Restart',position = (-.1,-.15,-.1), _on_click = self.restart)
                 # quit 버튼
-                quit_btn = Button(parent = self.die_panel,scale = (.1,.05),color = color.black,text_color = color.white,text = 'Quit : [ Q ]',position = (.1,-.15,-.1), _on_click = self.quit)
+                quit_btn = Button(parent = self.die_panel,scale = (.1,.05),color = color.black,text_color = color.white,text = 'Quit',position = (.1,-.15,-.1), _on_click = self.quit)
             else :
                 return
 
@@ -192,10 +187,19 @@ class Minecraft(Entity) :
             self.quickslot.delete()
             for e in self.inventory.quick_slot.children :
                 self.quickslot.append(e)
+        
+        if Minecraft.acquire :
+            Minecraft.acquire = False
+            self.temp.drop_append(Tempinventory.texture)
+            return
+
 
     def restart(self) :
-        destroy(self)
-        pyautogui.press('r')
+        destroy(self.terrain)
+        self.player.is_died = False
+        self.player.on_enable()
+        destroy(self.die_panel)
+        self.health.value = 100
         return
 
     # 게임 종료
@@ -203,19 +207,20 @@ class Minecraft(Entity) :
         application.quit()
 
 if __name__ == "__main__" :
-    # login = Login()
-    # if login.success :
-    #     minecraft = Minecraft()
 
-    app = Ursina()
+    def start() :
+        # login = Login()
+        # if login.success :
 
-    window.fps_counter.enabled = False
+        app = Ursina()
 
-    minecraft = Minecraft()
+        window.fps_counter.enabled = False
+        
+        game = Minecraft()     
 
-    def input(key) :
-        global minecraft
-        if key == 'r' :
-            minecraft = Minecraft()
+        app.run()
 
-    app.run()
+
+    
+    start()
+    

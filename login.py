@@ -3,8 +3,8 @@ from tkinter import Canvas, N, E, W, S
 from tkinter import messagebox
 from tkinter.constants import ANCHOR, CENTER
 from PIL import ImageTk, Image
-from minecraft_register import Register
-from minecraft_forget import Forget
+from register import Register
+from forget import Forget
 from queryProcess import queryProcess
 
 class Login(tk.Tk):
