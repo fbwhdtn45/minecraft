@@ -28,14 +28,19 @@ Thank you!!
 
 
 --- Running ---
+
 < Login.py >
+
 ![로그인](https://user-images.githubusercontent.com/73584717/128790040-eae48c9b-e3ba-4d01-aecb-d41cfbe5034f.jpg)
 
 < Forget.py >
+
 ![아이디비밀번호찾기](https://user-images.githubusercontent.com/73584717/128790046-381f408e-713c-4922-9af4-958d7329474a.jpg)
 
 < Register.py >
-![회원가입](https://user-images.githubusercontent.com/73584717/128790051-9cde67a9-966a-4248-8682-d40035d5ed1a.jpg)
+
+![회원가입](https://user-images.githubusercontent.com/73584717/128790383-8071dbb9-529c-4682-925b-fc10f41437cb.jpg)
+
 
 < Minecraft.py examples >
 ![시작](https://user-images.githubusercontent.com/73584717/128790043-aeccb8a5-9a7a-48eb-8c4a-fd73c5a33e9b.jpg)
